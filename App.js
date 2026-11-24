@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Text, View, Pressable, ScrollView, SafeAreaView } from 'react-native';
+import { Text, View, Pressable, SafeAreaView } from 'react-native';
 import { DATA_INICIAL, s } from './src/datos';
 import { VistaCatalogo, VistaComparador } from './src/catalogo';
 import VistaDetalle from './src/detalle';
@@ -22,23 +22,54 @@ export default function App() {
   const addNotif = (key, msg) => setNotifs((prev) => prev.some((n) => n.key === key) ? prev : [{ id: Date.now() + Math.random(), key, msg, leida: false }, ...prev]);
   const abrirDet = (p, vForzada = null) => { setSelP(p); setSelV(vForzada || (p.vars.length === 1 ? p.vars[0] : null)); setVista('det'); };
 
+  const sinLeer = notifs.filter((n) => !n.leida).length;
+  const totalCart = cart.reduce((a, b) => a + b.c, 0);
+
   return (
     <SafeAreaView style={s.c}>
-      <View style={s.hd}><Text style={s.tt}>🫧 SquishyPop 2.0</Text></View>
-      <ScrollView horizontal style={s.nv}>
-        {[['cat', 'Catálogo'], ['comp', `Comparar(${comp.length})`], ['cart', `Carrito(${cart.reduce((a, b) => a + b.c, 0)})`], ['dirs', 'Direcciones'], ['peds', 'Pedidos'], ['not', `Avisos(${notifs.filter((n) => !n.leida).length})`], ['ayu', 'Ayuda']].map(([k, t]) => (
-          <Pressable key={k} onPress={() => setVista(k)} style={[s.tb, vista === k && s.on]}><Text style={s.tbT}>{t}</Text></Pressable>
-        ))}
-      </ScrollView>
+      {/* HEADER COMPACTO CON ACCESOS DIRECTOS A DIRECCIONES Y AVISOS */}
+      <View style={s.hd}>
+        <View>
+          <Text style={s.tt}>🫧 SquishyPop 2.0</Text>
+          <Text style={{ color: '#FBCFE8', fontSize: 10 }}>Apreta el estrés, colecciona ternura</Text>
+        </View>
+        <View style={s.hdIcons}>
+          <Pressable onPress={() => setVista('dirs')} style={[s.iconBtn, vista === 'dirs' && s.iconBtnOn]}>
+            <Text style={s.tbT}>📍 Envío</Text>
+          </Pressable>
+          <Pressable onPress={() => setVista('not')} style={[s.iconBtn, vista === 'not' && s.iconBtnOn]}>
+            <Text style={s.tbT}>🔔 {sinLeer}</Text>
+          </Pressable>
+        </View>
+      </View>
 
-      {vista === 'cat' && <VistaCatalogo prods={prods} comp={comp} setComp={setComp} abrirDet={abrirDet} />}
-      {vista === 'comp' && <VistaComparador prods={prods} comp={comp} setComp={setComp} />}
-      {vista === 'det' && selP && <VistaDetalle selP={selP} selV={selV} setSelV={setSelV} prods={prods} setProds={setProds} cart={cart} setCart={setCart} alertas={alertas} setAlertas={setAlertas} addNotif={addNotif} abrirDet={abrirDet} volver={() => setVista('cat')} />}
-      {vista === 'cart' && <VistaCarrito cart={cart} setCart={setCart} dirs={dirs} dirId={dirId} setDirId={setDirId} prods={prods} setProds={setProds} peds={peds} setPeds={setPeds} addNotif={addNotif} irPedidos={() => setVista('peds')} />}
-      {vista === 'dirs' && <VistaDirecciones dirs={dirs} setDirs={setDirs} />}
-      {vista === 'peds' && <VistaPedidos peds={peds} setPeds={setPeds} prods={prods} setProds={setProds} addNotif={addNotif} />}
-      {vista === 'not' && <VistaNotifs notifs={notifs} setNotifs={setNotifs} />}
-      {vista === 'ayu' && <VistaAyuda peds={peds} />}
+      {/* CONTENIDO CENTRAL */}
+      <View style={{ flex: 1 }}>
+        {vista === 'cat' && <VistaCatalogo prods={prods} comp={comp} setComp={setComp} abrirDet={abrirDet} />}
+        {vista === 'comp' && <VistaComparador prods={prods} comp={comp} setComp={setComp} />}
+        {vista === 'det' && selP && <VistaDetalle selP={selP} selV={selV} setSelV={setSelV} prods={prods} setProds={setProds} cart={cart} setCart={setCart} alertas={alertas} setAlertas={setAlertas} addNotif={addNotif} abrirDet={abrirDet} volver={() => setVista('cat')} />}
+        {vista === 'cart' && <VistaCarrito cart={cart} setCart={setCart} dirs={dirs} dirId={dirId} setDirId={setDirId} prods={prods} setProds={setProds} peds={peds} setPeds={setPeds} addNotif={addNotif} irPedidos={() => setVista('peds')} />}
+        {vista === 'dirs' && <VistaDirecciones dirs={dirs} setDirs={setDirs} />}
+        {vista === 'peds' && <VistaPedidos peds={peds} setPeds={setPeds} prods={prods} setProds={setProds} addNotif={addNotif} />}
+        {vista === 'not' && <VistaNotifs notifs={notifs} setNotifs={setNotifs} />}
+        {vista === 'ayu' && <VistaAyuda peds={peds} />}
+      </View>
+
+      {/* BARRA DE NAVEGACIÓN INFERIOR FIJA (ESTILO APP NATIVA) */}
+      <View style={s.bottomBar}>
+        {[
+          ['cat', '🛍️', 'Tienda'],
+          ['comp', '⚖️', `Comp(${comp.length})`],
+          ['cart', '🛒', `Carrito(${totalCart})`],
+          ['peds', '📦', 'Pedidos'],
+          ['ayu', '💬', 'Ayuda']
+        ].map(([k, ico, lbl]) => (
+          <Pressable key={k} onPress={() => setVista(k)} style={[s.bTab, vista === k && s.on]}>
+            <Text style={{ fontSize: 15 }}>{ico}</Text>
+            <Text style={s.tbT}>{lbl}</Text>
+          </Pressable>
+        ))}
+      </View>
     </SafeAreaView>
   );
 }
